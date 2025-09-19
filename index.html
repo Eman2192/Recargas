@@ -40,14 +40,14 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37
     <div class="card">
       <label>Selecciona tu operador</label>
       <div class="operators">
-        <div class="operator-card" data-value="Telcel" data-logo="https://upload.wikimedia.org/wikipedia/commons/5/5c/Telcel_logo.png">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Telcel_logo.png" alt="Telcel">
+        <div class="operator-card" data-value="Telcel" data-logo="img/telcel.png">
+          <img src="img/telcel.png" alt="Telcel">
         </div>
-        <div class="operator-card" data-value="Movistar" data-logo="https://upload.wikimedia.org/wikipedia/commons/6/65/Movistar_logo.svg">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/6/65/Movistar_logo.svg" alt="Movistar">
+        <div class="operator-card" data-value="Movistar" data-logo="img/movistar.png">
+          <img src="img/movistar.png" alt="Movistar">
         </div>
-        <div class="operator-card" data-value="AT&T" data-logo="https://upload.wikimedia.org/wikipedia/commons/f/f9/AT%26T_logo_2016.svg">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/AT%26T_logo_2016.svg" alt="AT&T">
+        <div class="operator-card" data-value="AT&T" data-logo="img/att.jpeg">
+          <img src="img/att.jpeg" alt="AT&T">
         </div>
       </div>
       <input type="hidden" id="operator" name="operator">
@@ -148,10 +148,8 @@ form.addEventListener("submit",e=>{
   summary.style.display="block";
 
   emailjs.sendForm("service_tc4q92e","template_qdvkqdr",form)
-  .then(()=>{alert("✅ Datos enviados correctamente");form.reset();operatorCards.forEach(c=>c.classList.remove("active"));summary.style.display="none";})
   .catch(()=>alert("❌ Error al enviar"));
 });
 </script>
 </body>
 </html>
-
